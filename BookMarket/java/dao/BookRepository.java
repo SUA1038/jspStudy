@@ -40,7 +40,7 @@ public class BookRepository {
 		book2.setUnitsInStock(1000);
 		book2.setReleaseDate("2023/01/01");
 		book2.setFilename("ISBN1235.jpg");
-		
+
 		Book book3 = new Book("ISBN1236", "파이썬 프로그래밍", 30000);
 		book3.setAuthor("최성철");
 		book3.setDescription(
@@ -50,7 +50,7 @@ public class BookRepository {
 		book3.setUnitsInStock(1000);
 		book3.setReleaseDate("2023/01/01");
 		book3.setFilename("ISBN1236.jpg");
-		
+
 		listOfBooks.add(book1); // 객체를 배열에 넣는 방법
 		listOfBooks.add(book2);
 		listOfBooks.add(book3); // ArrayList 배열에 3개의 boot 객체가 삽입됨.

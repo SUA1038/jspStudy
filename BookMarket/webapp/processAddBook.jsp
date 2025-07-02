@@ -1,77 +1,76 @@
-<%@page import="com.oreilly.servlet.multipart.DefaultFileRenamePolicy"%>
-<%@page import="com.oreilly.servlet.MultipartRequest"%>
-<%@page import="java.util.Enumeration"%>
-<%@page import="dto.Book"%>
-<%@page import="dao.BookRepository"%>
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-
+<%@ page contentType="text/html; charset=utf-8"%>
+<%@ page import="com.oreilly.servlet.*"%>
+<%@ page import="com.oreilly.servlet.multipart.*"%>
+<%@ page import="java.util.*"%>
+<%@ include file="dbconn.jsp" %>
 <%
-	request.setCharacterEncoding("UTF-8"); // post 메서드 한글 지원 필수코드
-	
-	// 파일 업로드 처리용 코드 추가
-	String filename = "";
-	String realFolder =  application.getRealPath("/resources/images");	// 톰캣이 관리하는 실제 경로
-						// http://192.168.111.101:8080/BookMarket
-	int maxSize = 5 * 1024 * 1024 ; // 5 MB 까지 저장
-	String encType = "utf-8"; 		// 파일명이 한글일 수 있음
-	
-	MultipartRequest multipartRequest = new MultipartRequest(request, realFolder, maxSize, encType, new DefaultFileRenamePolicy());
-	// 만약 오류 발생 시 cos.jar 버전 확인 -> 마이그레이션 cos_2.jar 삽입
-	// enctype="multipart/form-data" 하면 request영역이 아닌 multipartRequest으로 전달 됨
-	
-	String bookId = multipartRequest.getParameter("bookId"); // multipartRequest 변경 꼭 하기!!! 중요함!!!
-	String name = multipartRequest.getParameter("name");
-	String unitPrice = multipartRequest.getParameter("unitPrice");
-	String author = multipartRequest.getParameter("author");
-	String publisher = multipartRequest.getParameter("publisher");
-	String releaseDate = multipartRequest.getParameter("releaseDate");	
-	String description = multipartRequest.getParameter("description");	
-	String category = multipartRequest.getParameter("category");
-	String unitsInStock = multipartRequest.getParameter("unitsInStock");
-	String condition = multipartRequest.getParameter("condition"); // post로 전달받은 값
+	request.setCharacterEncoding("UTF-8");
 
-	// 다중파일용 파일명 가져오기
-	Enumeration files = multipartRequest.getFileNames(); // 업로드 된 파일명들을 가져옴
-	String fname = (String) files.nextElement(); 		// 파일이 있는지 여부
-	String fileName = multipartRequest.getFilesystemName(fname); // 파일명을 가져와 변수에 넣음
+
+	String filename = "";
+
+	String realFolder = application.getRealPath("/resources/images");
+	int maxSize = 5 * 1024 * 1024; //최대 업로드될 파일의 크기5Mb
+	String encType = "utf-8"; //인코딩 타입
+	
+
+	MultipartRequest multi = new MultipartRequest(request, realFolder, maxSize, encType, new DefaultFileRenamePolicy());
+
+
+	String bookId = multi.getParameter("bookId");
+	String name = multi.getParameter("name");
+	String unitPrice = multi.getParameter("unitPrice");
+	String author = multi.getParameter("author");
+	String publisher = multi.getParameter("publisher");
+	String releaseDate = multi.getParameter("releaseDate");	
+	String description = multi.getParameter("description");	
+	String category = multi.getParameter("category");
+	String unitsInStock = multi.getParameter("unitsInStock");
+	String condition = multi.getParameter("condition");
+
+	Enumeration files = multi.getFileNames();
+	String fname = (String) files.nextElement();
+	String fileName = multi.getFilesystemName(fname);
+	
 	
 	int price;
 
 	if (unitPrice.isEmpty())
 		price = 0;
 	else
-		price = Integer.valueOf(unitPrice); 
-	// 가격이 문자타입으로 전달됨, 정수타입으로 변경 
+		price = Integer.valueOf(unitPrice);
 
 	long stock;
 
 	if (unitsInStock.isEmpty())
 		stock = 0;
 	else
-		stock = Long.valueOf(unitsInStock);
-	// 재고가 문자타입으로 전달됨, long 타입으로 변경
+		stock = Long.valueOf(unitsInStock);	
 	
 	
-	BookRepository dao = BookRepository.getInstance();
+	PreparedStatement pstmt = null;	
+	
+	String sql = "insert into book values(?,?,?,?,?,?,?,?,?,?,?)";
 
-	Book newBook = new Book(); // 빈객체 생성
-	newBook.setBookId(bookId); // 위 전달된 값을 객체에 넣음
-	newBook.setName(name);
-	newBook.setUnitPrice(price);
-	newBook.setAuthor(author);
-	newBook.setPublisher(publisher);
-	newBook.setReleaseDate(releaseDate);
-	newBook.setDescription(description);
-	newBook.setCategory(category);
-	newBook.setUnitsInStock(stock);
-	newBook.setCondition(condition);
-	newBook.setFilename(fileName); // 파일명 추가!
+	pstmt = conn.prepareStatement(sql);
+	pstmt.setString(1, bookId);
+	pstmt.setString(2, name);
+	pstmt.setInt(3, price);
+	pstmt.setString(4, author);
+	pstmt.setString(5, description);
+	pstmt.setString(6, publisher);
+	pstmt.setString(7, category);
+	pstmt.setLong(8, stock);
+	pstmt.setString(9, releaseDate);	
+	pstmt.setString(10, condition);
+	pstmt.setString(11, fileName);
+	pstmt.executeUpdate();
 	
-	System.out.print(newBook.toString());
-	dao.addBook(newBook); // 만들어진 객체를 리스트배열에 꼽는다.
-	
-	response.sendRedirect("books.jsp"); // 성공시 강제로 이동하는 페이지
+	if (pstmt != null)
+		pstmt.close();
+	if (conn != null)
+		conn.close();
 
+	response.sendRedirect("books.jsp");
 
 %>
