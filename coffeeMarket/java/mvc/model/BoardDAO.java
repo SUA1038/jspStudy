@@ -133,7 +133,7 @@ public class BoardDAO {
 
 		// 검색 조건이 없을 경우 전체 게시글 가져오기
 		if (items == null && text == null)
-			sql = "select * from board ORDER BY num DESC";
+			sql = "SELECT board.*, member.name FROM board JOIN member ON board.id = member.id ORDER BY board.num DESC";
 		else
 			// 검색 조건이 있을 경우 해당 조건으로 검색
 			sql = "SELECT * FROM board WHERE " + items + " LIKE '%" + text + "%' ORDER BY num DESC";
@@ -217,7 +217,7 @@ public class BoardDAO {
 			return name; // name 반환
 		} catch (Exception ex) {
 			// 예외 발생 시 콘솔에 출력
-			System.out.println("getBoardByNum() ???? : " + ex);
+			System.out.println("() ???? : " + ex);
 		} finally {
 			// 사용한 자원 해제 (역순으로)
 			try {
@@ -238,46 +238,38 @@ public class BoardDAO {
 
 	// board 테이블에 새로운 글 삽입하기
 	public void insertBoard(BoardDTO board) {
-		Connection conn = null; // DB 연결을 위한 Connection 객체
-		PreparedStatement pstmt = null; // SQL 실행을 위한 PreparedStatement 객체
+		  Connection conn = null;                 // DB 연결 객체 선언
+		    PreparedStatement pstmt = null;         // SQL 실행 준비 객체 선언
 
-		try {
-			// DB 연결
-			conn = DBConnection.getConnection();
+		    try {
+		        conn = DBConnection.getConnection();   // DB 연결 얻기
 
-			// 게시글 정보를 DB에 삽입하기 위한 SQL 문
-			String sql = "INSERT INTO board (id, name, subject, content, regist_day, hit, likebutton) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
+		        // name 컬럼 제외, 게시글 정보만 INSERT 하는 SQL 작성
+		        String sql = "INSERT INTO board (id, subject, content, regist_day, hit, likebutton) VALUES (?, ?, ?, ?, ?, ?)";
 
-			// PreparedStatement 객체 생성 및 파라미터 설정
-			pstmt = conn.prepareStatement(sql);
-			pstmt.setString(1, board.getId()); // 작성자 ID
-			pstmt.setString(2, board.getName()); // 작성자 이름
-			pstmt.setString(3, board.getSubject()); // 게시글 제목
-			pstmt.setString(4, board.getContent()); // 게시글 내용
-			pstmt.setString(5, board.getRegist_day()); // 등록일
-			pstmt.setInt(6, board.getHit()); // 조회수 (기본값 0)
-			pstmt.setInt(7, board.getLikebutton()); // 공감 수 (기본값 0)
+		        pstmt = conn.prepareStatement(sql);    // SQL 실행 준비
 
-			// SQL 실행 (데이터 삽입)
-			pstmt.executeUpdate();
+		        pstmt.setString(1, board.getId());         // 1번째 물음표에 작성자 ID 세팅
+		        pstmt.setString(2, board.getSubject());    // 2번째 물음표에 게시글 제목 세팅
+		        pstmt.setString(3, board.getContent());    // 3번째 물음표에 게시글 내용 세팅
+		        pstmt.setString(4, board.getRegist_day()); // 4번째 물음표에 등록일 세팅
+		        pstmt.setInt(5, board.getHit());           // 5번째 물음표에 조회수 세팅 (보통 0)
+		        pstmt.setInt(6, board.getLikebutton());    // 6번째 물음표에 좋아요 수 세팅 (보통 0)
 
-		} catch (Exception ex) {
-			// 예외 발생 시 로그 출력
-			System.out.println("insertBoard() ???? : " + ex);
+		        pstmt.executeUpdate();                     // SQL 실행 (INSERT)
 
-		} finally {
-			// 사용한 자원 해제 (역순으로)
-			try {
-				if (pstmt != null)
-					pstmt.close();
-				if (conn != null)
-					conn.close();
-			} catch (Exception ex) {
-				throw new RuntimeException(ex.getMessage()); // 자원 해제 중 예외 발생 시 처리
-			}
+		    } catch (Exception ex) {
+		        System.out.println("insertBoard() 에러 : " + ex);  // 예외 발생 시 에러 메시지 출력
+		    } finally {
+		        try {
+		            if (pstmt != null) pstmt.close();   // PreparedStatement 닫기
+		            if (conn != null) conn.close();     // DB 연결 닫기
+		        } catch (Exception ex) {
+		            throw new RuntimeException(ex.getMessage());  // 자원 닫기 실패 시 런타임 예외 발생
+		        }
+		    }
 		}
-	}
+	
 
 	// 선택된 글(num)의 조회 수(hit)를 1 증가시키는 메서드
 	public void updateHit(int num) {
@@ -341,7 +333,7 @@ public class BoardDAO {
 		updateHit(num);
 
 		// 선택한 글 번호에 해당하는 게시글을 조회하는 SQL 문
-		String sql = "select * from board where num = ? ";
+		String sql = "SELECT board.*, member.name FROM board JOIN member ON board.id = member.id WHERE board.num = ?";
 
 		try {
 			// DB 연결
@@ -394,52 +386,43 @@ public class BoardDAO {
 
 	// 선택된 글 내용 수정하기
 	public void updateBoard(BoardDTO board) {
+	    Connection conn = null; // DB 연결 객체
+	    PreparedStatement pstmt = null; // SQL 실행 객체
 
-		Connection conn = null; // DB 연결 객체
-		PreparedStatement pstmt = null; // SQL 실행 객체
+	    try {
+	        // DB 연결
+	        conn = DBConnection.getConnection();
 
-		try {
-			// 게시글 수정 SQL 문: 이름(name), 제목(subject), 내용(content)을 num 기준으로 수정
-			String sql = "update board set name=?, subject=?, content=? where num=?";
+	        // 게시글 수정 SQL 문: 제목(subject), 내용(content)을 num 기준으로 수정
+	        String sql = "UPDATE board SET subject = ?, content = ? WHERE num = ?";
 
-			// DB 연결
-			conn = DBConnection.getConnection();
+	        // SQL 준비
+	        pstmt = conn.prepareStatement(sql);
 
-			// SQL 준비
-			pstmt = conn.prepareStatement(sql);
+	        // 파라미터 세팅
+	        pstmt.setString(1, board.getSubject());
+	        pstmt.setString(2, board.getContent());
+	        pstmt.setInt(3, board.getNum());
 
-			// 트랜잭션 수동 커밋 모드 설정 (자동 커밋 해제)
-			conn.setAutoCommit(false);
+	        // SQL 실행 (업데이트)
+	        pstmt.executeUpdate();
 
-			// SQL 파라미터 세팅
-			pstmt.setString(1, board.getName()); // 수정할 이름
-			pstmt.setString(2, board.getSubject()); // 수정할 제목
-			pstmt.setString(3, board.getContent()); // 수정할 내용
-			pstmt.setInt(4, board.getNum()); // 수정할 게시글 번호 (WHERE 조건)
+	    } catch (Exception ex) {
+	        // 예외 발생 시 에러 메시지 출력
+	        System.out.println("updateBoard() 에러 발생 : " + ex);
 
-			// SQL 실행 (업데이트)
-			pstmt.executeUpdate();
-
-			// 트랜잭션 커밋: 변경사항 DB에 확정
-			conn.commit();
-
-		} catch (Exception ex) {
-			// 예외 발생 시 에러 메시지 출력
-			System.out.println("updateBoard() 에러 발생 : " + ex);
-
-		} finally {
-			// DB 자원 해제
-			try {
-				if (pstmt != null)
-					pstmt.close();
-				if (conn != null)
-					conn.close();
-			} catch (Exception ex) {
-				throw new RuntimeException(ex.getMessage());
-			}
-		}
+	    } finally {
+	        // DB 자원 해제
+	        try {
+	            if (pstmt != null) pstmt.close();
+	            if (conn != null) conn.close();
+	        } catch (Exception ex) {
+	            throw new RuntimeException(ex.getMessage());
+	        }
+	    }
 	}
-
+	
+	
 	// 선택된 글 삭제하기
 	public void deleteBoard(int num) {
 		Connection conn = null; // DB 연결 객체

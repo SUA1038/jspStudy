@@ -1,4 +1,4 @@
-CREATE TABLE Board (
+CREATE TABLE Board  (
        num int not null auto_increment,		-- 게시글 순번
        id varchar(10) not null,				-- 회원 아이디
        name varchar(10) not null,			-- 회원 이름
@@ -17,6 +17,10 @@ drop table Board;
 
 ------------------------------------------------------------------------
 -- 수정 후
+
+USE coffee;
+
+
 CREATE TABLE IF NOT EXISTS BOARD (
        NUM int not null auto_increment,   
        ID varchar(10) not null,   
@@ -28,6 +32,10 @@ CREATE TABLE IF NOT EXISTS BOARD (
        PRIMARY KEY (num),
        FOREIGN KEY(ID) REFERENCES MEMBER(ID)
 )default CHARSET=utf8;
+
+
+
+
 --name varchar(10) not null, 이름은 MEMBER 테이블에서 불러오는 걸로
 select * from Board;
 desc Board;
@@ -46,7 +54,7 @@ create table member (
       regist_day varchar(50) not null, -- 가입 일자
       primary key(id)                  -- 회원 아이디를 고유 키로 설정 
 ) default CHARSET=utf8;
-
+drop table member;
 select * from member;
 
 -----------------------------------------------------------
@@ -67,3 +75,4 @@ VALUES
 ('user3', '세 번째 게시물', '세 번째 내용. 테스트용입니다.', '2025/07/03(11:30:00)', 2, 1),
 ('user1', '네 번째 글입니다', '다시 user1이 작성한 글입니다.', '2025/07/03(12:00:00)', 15, 3),
 ('user2', '다섯 번째 테스트', '게시판 테스트용 글입니다.', '2025/07/03(12:30:00)', 0, 0);
+

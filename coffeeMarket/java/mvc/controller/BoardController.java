@@ -28,6 +28,7 @@ public class BoardController extends HttpServlet {
 		String command = RequestURI.substring(contextPath.length());
 		//클라이언트 요청 URI에서 컨텍스트 패스 길이만큼 빼서 실제 명령어(command)를 얻음.
 		// 예: /BoardListAction.do 같은 값이 됨.
+		
 	
 		response.setContentType("text/html; charset=utf-8");
 		request.setCharacterEncoding("utf-8");
@@ -48,12 +49,14 @@ public class BoardController extends HttpServlet {
 		    RequestDispatcher rd = request.getRequestDispatcher("./board/view.jsp");
 		    rd.forward(request, response);											
 		} else if (command.equals("/BoardView.do")) {  //글 상세 페이지 출력
-				RequestDispatcher rd = request.getRequestDispatcher("./board/view.jsp");
-				rd.forward(request, response);	
+		    requestBoardView(request);  // ★ 이 줄 꼭 추가 ★
+		    RequestDispatcher rd = request.getRequestDispatcher("./board/view.jsp");
+		    rd.forward(request, response);		
 		} else if (command.equals("/BoardUpdateAction.do")) { //선택된 글 수정하기
-				requestBoardUpdate(request);
-				RequestDispatcher rd = request.getRequestDispatcher("/BoardListAction.do");
-				rd.forward(request, response);
+		    requestBoardUpdate(request);
+		    requestBoardView(request);
+		    RequestDispatcher rd = request.getRequestDispatcher("./board/view.jsp"); // or editForm.jsp
+		    rd.forward(request, response);
 		}else if (command.equals("/BoardDeleteAction.do")) { //선택된 글 삭제하기
 				requestBoardDelete(request);
 				RequestDispatcher rd = request.getRequestDispatcher("/BoardListAction.do");
@@ -164,24 +167,35 @@ public class BoardController extends HttpServlet {
 	
 	//선택된 글 상세 페이지 가져오기(사용자가 선택한 게시글의 상세 내용을 가져와 request에 저장하는 메서드)
 	public void requestBoardView(HttpServletRequest request) {
-
-	    // BoardDAO 객체 생성 (싱글톤으로 관리되는 DAO)
 	    BoardDAO dao = BoardDAO.getInstance();
 
-	    // 요청 파라미터에서 게시글 번호(num)와 현재 페이지 번호(pageNum)를 가져옴
-	    int num = Integer.parseInt(request.getParameter("num"));       // 게시글 고유 번호
-	    int pageNum = Integer.parseInt(request.getParameter("pageNum")); // 현재 페이지 번호
+	    // num(게시글 번호)와 pageNum(페이지 번호)을 받을 변수 초기화
+	    int num = 0;
+	    int pageNum = 1;  // 기본 페이지 번호는 1로 설정
 
-	    // 게시글 정보를 담을 DTO 객체 생성
-	    BoardDTO board = new BoardDTO();
+	    try {
+	        // 클라이언트 요청에서 num 파라미터를 가져와 정수로 변환
+	        String numStr = request.getParameter("num");
+	        if (numStr != null) num = Integer.parseInt(numStr);
 
-	    // 게시글 번호에 해당하는 상세 정보 조회 (조회수 증가도 포함됨)
-	    board = dao.getBoardByNum(num, pageNum);
+	        // 클라이언트 요청에서 pageNum 파라미터를 가져와 정수로 변환
+	        String pageStr = request.getParameter("pageNum");
+	        if (pageStr != null) pageNum = Integer.parseInt(pageStr);
+	    } catch (NumberFormatException e) {
+	        // 파라미터가 없거나 숫자가 아니면 기본값 유지 (num=0, pageNum=1)
+	        // 예외를 잡아서 서버 오류 발생을 방지
+	    }
 
-	    // JSP에서 사용할 수 있도록 request에 필요한 데이터를 저장
-	    request.setAttribute("num", num);           // 글 번호 전달
-	    request.setAttribute("page", pageNum);      // 현재 페이지 번호 전달
-	    request.setAttribute("board", board);       // 글 상세 내용 전달 (view.jsp에서 출력됨)
+	    // 게시글 상세 정보를 DB에서 조회 (조회수 증가 포함)
+	    BoardDTO board = dao.getBoardByNum(num, pageNum);
+
+	    // 혹시 조회 결과가 null이면 빈 BoardDTO 객체를 만들어 null 방지
+	    if(board == null) board = new BoardDTO();
+
+	    // JSP에서 사용할 수 있도록 request 객체에 데이터 저장
+	    request.setAttribute("num", num);         // 글 번호
+	    request.setAttribute("page", pageNum);    // 현재 페이지 번호
+	    request.setAttribute("board", board);     // 게시글 상세 정보
 	}
 	
 	 //선택된 글 내용 수정하기
@@ -193,9 +207,10 @@ public class BoardController extends HttpServlet {
 
 	    // DAO 인스턴스 생성 (싱글톤)
 	    BoardDAO dao = BoardDAO.getInstance();		
-
+	    
 	    // 새로운 BoardDTO 객체 생성 및 수정할 데이터 설정
-	    BoardDTO board = new BoardDTO();		
+	    BoardDTO board = new BoardDTO();
+	    
 	    board.setNum(num); // 수정할 게시글 번호 설정
 	    board.setName(request.getParameter("name")); // 작성자 이름
 	    board.setSubject(request.getParameter("subject")); // 게시글 제목
@@ -208,7 +223,12 @@ public class BoardController extends HttpServlet {
 	    board.setRegist_day(regist_day); // 수정 시간 설정
 
 	    // DAO를 통해 데이터베이스에 업데이트 요청
-	    dao.updateBoard(board);								
+	    dao.updateBoard(board);
+	    
+	    // 수정된 board를 JSP에서 사용할 수 있도록 저장
+	    request.setAttribute("board", board);
+	    request.setAttribute("num", num);
+	    request.setAttribute("page", pageNum);
 	}
 	//선택된 글 삭제하기
 	//클라이언트로부터 삭제할 게시글 번호(num)와 현재 페이지 번호(pageNum)를 받아서 해당 게시글을 삭제하는 메서드

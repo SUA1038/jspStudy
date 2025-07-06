@@ -11,7 +11,7 @@ public class DBConnection {
 		
 		Connection conn = null;		
 	
-		String url = "jdbc:mysql://192.168.111.101:3306/coffeeMarket";
+		String url = "jdbc:mysql://192.168.111.101:3306/coffee";
 		String user = "coffeeMarket";
 		String password = "2222";
 
