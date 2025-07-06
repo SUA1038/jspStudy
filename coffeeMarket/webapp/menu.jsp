@@ -66,18 +66,6 @@
       <i class="bi bi-pencil-square"></i>
       글 작성
     </a>
-    <a href="./BoardViewAction.do?num=1&pageNum=1" class="menu-item">
-      <i class="bi bi-eye"></i>
-      글 상세 보기
-    </a>
-    <a href="./BoardUpdateAction.do?num=1&pageNum=1" class="menu-item">
-      <i class="bi bi-pencil"></i>
-      글 수정
-    </a>
-    <a href="./BoardDeleteAction.do?num=1&pageNum=1" class="menu-item">
-      <i class="bi bi-trash"></i>
-      글 삭제
-    </a>
   </div>
 </body>
 </html>
